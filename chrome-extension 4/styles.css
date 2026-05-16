@@ -1,0 +1,169 @@
+/**
+ * Conga CLM AI Assistant - Content Styles
+ * Styles for AI assistant overlay on Conga pages
+ */
+
+#conga-ai-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 400px;
+  max-width: calc(100vw - 40px);
+  height: 500px;
+  max-height: calc(100vh - 40px);
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 2147483647; /* Ensure it's on top */
+  display: none;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  border: 1px solid #ddd;
+}
+
+.conga-ai-header {
+  background: #f5f5f5;
+  color: #333;
+  padding: 12px 16px;
+  border-radius: 8px 8px 0 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: move;
+  user-select: none;
+  font-weight: 600;
+  font-size: 14px;
+  border-bottom: 1px solid #ddd;
+}
+
+.conga-ai-close {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s ease;
+}
+
+.conga-ai-close:hover {
+  background-color: #e9e9e9;
+}
+
+.conga-ai-content {
+  height: calc(100% - 48px);
+  display: flex;
+  flex-direction: column;
+}
+
+.conga-ai-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  color: #333;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.conga-ai-message {
+  margin-bottom: 20px;
+  background: #f9f9f9;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #eee;
+}
+
+.conga-ai-query {
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+  position: relative;
+}
+
+.conga-ai-response {
+  margin-top: 8px;
+}
+
+.conga-ai-timestamp {
+  font-size: 11px;
+  opacity: 0.7;
+  float: right;
+  margin-top: 2px;
+}
+
+.conga-ai-messages::-webkit-scrollbar {
+  width: 4px;
+}
+
+.conga-ai-messages::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.conga-ai-messages::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.conga-ai-messages::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  #conga-ai-container {
+    width: calc(100vw - 20px);
+    right: 10px;
+    left: 10px;
+  }
+}
+
+/* Code formatting */
+.conga-ai-messages pre {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+  margin: 8px 0;
+}
+
+.conga-ai-messages code {
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 12px;
+}
+
+.conga-ai-messages strong {
+  font-weight: 600;
+  color: #fff;
+}
+
+.conga-ai-messages em {
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* Animation for showing */
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+#conga-ai-container[style*="block"] {
+  animation: slideInFromRight 0.3s ease-out;
+}

@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "Conga CLM AI Assistant",
+  "version": "1.0.0",
+  "description": "AI-powered assistant for Conga CLM contract management",
+
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+
+  "host_permissions": [
+    "https://*.congacloud.com/*",
+    "https://api.anthropic.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "content_scripts": [
+    {
+      "matches": ["https://*.congacloud.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"]
+    }
+  ],
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Conga AI Assistant"
+  }
+}
