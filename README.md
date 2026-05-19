@@ -1,258 +1,237 @@
-# 🤖 Conga CLM AI Agent - Web Edition
+# 🤖 Salesforce Conga CLM AI Agent
 
-An intelligent, LLM-powered AI agent for managing contracts in Conga CLM platform. Features a modern web interface accessible from any browser, mobile-friendly design, and portable deployment for home/office use.
+An intelligent AI agent for managing Conga CLM agreements in Salesforce. Chat with your agreements using natural language through Claude AI.
 
 ## 🌟 Features
 
-- **🌐 Web-Based Chat Interface**: Modern, responsive chat UI accessible from any browser
-- **📱 Mobile Friendly**: Works perfectly on phones, tablets, and desktops
-- **🚀 One-Click Launch**: Simple startup scripts for Windows, Mac, and Linux
-- **🏠 Portable**: Copy folder to any computer and run - no complex setup
-- **🔄 Real-Time Communication**: WebSocket-powered instant messaging
-- **🧠 Natural Language**: Talk to the agent in plain English
-- **🔒 Secure**: OAuth2 authentication with automatic token refresh
-- **⚡ Fast**: Optimized for quick responses and smooth experience
+- **🧠 Natural Language Interface**: Ask questions in plain English about your agreements
+- **🔍 Smart Search**: Find agreements by status, account, dates, value ranges, and more
+- **📊 Analytics & Insights**: Get summaries, totals, and trend analysis
+- **🔗 Salesforce Integration**: Works directly with your Salesforce org and Conga CLM data
+- **⚡ Fast SOQL Queries**: Optimized queries with automatic pagination
+- **🛡️ Secure Authentication**: OAuth2 Client Credentials flow with no stored passwords
 
 ## 🏗️ Architecture
 
-### Web Application Stack
-- **Backend**: Flask + SocketIO for real-time communication
-- **Frontend**: Modern HTML5/CSS3/JavaScript with responsive design
-- **AI Engine**: Claude API (claude-sonnet-4-20250514) for natural language understanding
-- **APIs**: Comprehensive Conga CLM REST API integration
+### Authentication Model
+- **OAuth2 Client Credentials Flow** via Salesforce External Client App
+- No username/password required - just Client ID and Secret
+- Direct API connections to your Salesforce org
 
-### Agent Capabilities
-- **CREATE CONTRACT**: "Create an MSA with Acme Corp for $50k starting March 1st"
-- **SEARCH CONTRACTS**: "Find all active contracts with TechCorp"
-- **CONTRACT LIFECYCLE**: "Activate contract abc123", "Renew the Acme MSA"
-- **CONTRACT DETAILS**: "Show me details of contract abc123"
-- **ACCOUNT SEARCH**: "Find accounts matching Microsoft"
-- **GENERAL QUERIES**: "How many contracts are expiring this month?"
+### Data Integration
+- **Salesforce Objects**: `Apttus__APTS_Agreement__c` (agreements) and related objects
+- **SOQL Queries**: Intelligent query generation from natural language
+- **Real-time Access**: Live data from your Salesforce org
 
-## 🚀 Quick Start (Web Interface)
+### AI Engine
+- **Claude 3.5 Sonnet**: Advanced language model for understanding and generating responses
+- **Function Calling**: Seamless integration between AI and Salesforce APIs
+- **Context Awareness**: Maintains conversation context for follow-up questions
 
-### Option 1: One-Click Launch ⚡
+## 🚀 Quick Start
 
-#### Windows:
+### 1. Prerequisites
+- Python 3.8+
+- Salesforce org with Conga CLM
+- External Client App configured in Salesforce
+- Anthropic API key
+
+### 2. Setup Environment Variables
+
+Create a `.env` file:
+
 ```bash
-# Double-click start.bat or run:
-start.bat
+# Salesforce Configuration
+SF_CLIENT_ID=your_connected_app_client_id
+SF_CLIENT_SECRET=your_connected_app_client_secret
+SF_INSTANCE_URL=https://yourorg.my.salesforce.com
+SF_API_VERSION=v62.0
+SF_AGREEMENT_OBJECT=Apttus__APTS_Agreement__c
+
+# AI Configuration
+ANTHROPIC_API_KEY=your_anthropic_api_key
 ```
 
-#### macOS/Linux:
-```bash
-# Double-click start.sh or run:
-./start.sh
-```
+### 3. Install Dependencies
 
-### Option 2: Manual Launch
 ```bash
-# Install dependencies (first time only)
 pip install -r requirements.txt
-
-# Start web server
-python run.py
 ```
 
-## 🌐 Access the Application
-
-Once started, open your browser to:
-- **Local**: `http://localhost:5000`
-- **Network**: `http://your-ip:5000` (shown in console)
-- **Mobile**: Use network URL on same WiFi
-
-### Multi-Device Access:
-- **Desktop**: Full-featured interface with all capabilities
-- **Tablet**: Optimized touch interface
-- **Phone**: Mobile-responsive chat interface
-- **Multiple Users**: Each gets their own conversation session
-
-## 📋 Environment Variables
-
-Create a `.env` file with these variables:
+### 4. Test Authentication
 
 ```bash
-# Conga CLM API Configuration
-CONGA_CLIENT_ID=your-client-id-here
-CONGA_CLIENT_SECRET=your-client-secret-here
-CONGA_AUTH_URL=https://login-rlspreview.congacloud.com/api/v1/auth/connect/token
-CONGA_BASE_URL=https://preview-rls09.congacloud.com
-
-# Anthropic API Configuration
-ANTHROPIC_API_KEY=your-anthropic-api-key-here
+python test_sf_auth.py
 ```
 
-## 🔧 Usage Examples
+This will verify your Salesforce credentials and show sample agreements.
 
-### Creating Contracts
-```
-You: Create an MSA with Acme Corp for $50,000 starting March 1st
-Agent: I found 2 existing contracts with Acme Corp:
-• MSA - Active - Created Jan 2024 (ID: contract123)
-• NDA - Expired - Created June 2023 (ID: contract456)
+### 5. Start Chatting
 
-Do you still want to create a new MSA contract? (yes/no)
-
-You: yes
-Agent: Created MSA contract "Acme Corp Master Service Agreement" (ID: abc123) starting March 1, 2024
+```bash
+python chat.py
 ```
 
-### Searching Contracts
+## 🔧 Configuration
+
+### Required Environment Variables
+
+| Variable | Description | Example |
+|----------|-------------|---------|
+| `SF_CLIENT_ID` | External Client App Consumer Key | `3MVG9t8TL3jEkA4i...` |
+| `SF_CLIENT_SECRET` | External Client App Consumer Secret | `6C29530195F51B59...` |
+| `SF_INSTANCE_URL` | Your Salesforce instance URL | `https://yourorg.my.salesforce.com` |
+| `SF_API_VERSION` | Salesforce API version (optional) | `v62.0` |
+| `SF_AGREEMENT_OBJECT` | Agreement object API name (optional) | `Apttus__APTS_Agreement__c` |
+| `ANTHROPIC_API_KEY` | Claude API key | `sk-ant-api03-...` |
+
+### Salesforce Setup
+
+1. **Create External Client App**:
+   - Setup → App Manager → New Connected App
+   - Enable OAuth settings
+   - Grant `api` and `refresh_token` scopes
+   - Enable Client Credentials Flow
+
+2. **Grant Permissions**:
+   - Assign API access to the integration user
+   - Ensure Conga CLM object permissions
+   - Test with Workbench or similar tool
+
+## 💬 Sample Queries
+
+### Search & Discovery
 ```
-You: Find all contracts with TechCorp
-Agent: Found 3 contracts with TechCorp:
-• MSA - TechCorp Master Service Agreement (Active) - ID: xyz789
-• NDA - TechCorp NDA (Active) - ID: def456
-• SOW - Q1 Services Agreement (Completed) - ID: ghi123
+• List my 5 most recent agreements
+• Show me agreements expiring in the next 30 days
+• Find all agreements with Microsoft
+• What agreements are in 'In Effect' status?
 ```
 
-### Contract Lifecycle Management
+### Value & Analysis
 ```
-You: Activate contract abc123
-Agent: Contract abc123 has been successfully activated. Status is now Active.
-```
-
-## 🛠️ Project Structure
-
-```
-conga-agent/
-├── .env                      # Credentials (git-ignored)
-├── .env.example              # Example configuration
-├── .gitignore
-├── requirements.txt
-├── prompts/
-│   └── system_prompt.txt     # Editable system prompt with business rules
-├── src/
-│   ├── __init__.py
-│   ├── conga_client.py       # Conga API client with OAuth
-│   ├── tools.py              # Tool definitions for Claude
-│   ├── agent.py              # Main agent logic with Claude
-│   └── utils.py              # Helper functions
-├── main.py                   # Entry point - interactive chat
-└── README.md
+• Show me agreements over $100,000
+• What's the total value of all active agreements?
+• Which agreements have the highest contract value?
+• Find agreements that started this year
 ```
 
-## 🤖 Available Commands
+### Details & Information
+```
+• Get details for agreement [agreement ID]
+• What fields are available for agreements?
+• Show me agreement clauses for [agreement ID]
+• What's the status of agreement ABC-123?
+```
 
-In the interactive CLI:
+### Custom Queries
+```
+• Run this SOQL: SELECT Name, Apttus__Status__c FROM Apttus__APTS_Agreement__c LIMIT 5
+• Find expired agreements from last quarter
+• Show me all amendments created this month
+```
 
-- `help` - Show help and examples
-- `quit` or `exit` - Exit the application
+## 🛠️ Available Tools
+
+The agent has access to these specialized tools:
+
+- **`search_agreements`** - Find agreements by filters (status, account, dates, value)
+- **`get_agreement_details`** - Get full details for a specific agreement ID
+- **`run_soql`** - Execute custom SOQL SELECT queries
+- **`list_agreement_fields`** - Discover available fields and their types
+- **`create_agreement`** - Create new agreements
+- **`update_agreement`** - Update existing agreements
+
+## 📋 CLI Commands
+
+In the chat interface:
+
+- `help` - Show sample queries and usage tips
+- `health` - Check system status and API connectivity
 - `clear` - Clear conversation history
-- `status` - Check agent health status
-- `history` - Show conversation summary
+- `quit` or `exit` - Exit the application
 
-## 🔨 Available Contract Types
+## 🎯 Field Mappings
 
-- **MSA** - Master Service Agreement
-- **NDA** - Non-Disclosure Agreement
-- **SOW** - Statement of Work
-- **ORDER** - Order Form
-- **AMENDMENT** - Contract Amendment
+Common Conga CLM field mappings:
 
-## 📡 Conga CLM APIs Used
+| Display Name | API Name | Description |
+|--------------|----------|-------------|
+| Agreement Number | `Name` | Unique agreement identifier |
+| Status | `Apttus__Status__c` | Current agreement status |
+| Status Category | `Apttus__Status_Category__c` | Lifecycle stage |
+| Account | `Apttus__Account__c` | Related account (lookup) |
+| Start Date | `Apttus__Contract_Start_Date__c` | Agreement start date |
+| End Date | `Apttus__Contract_End_Date__c` | Agreement end date |
+| Total Value | `Apttus__Total_Contract_Value__c` | Total contract value |
+| Currency | `CurrencyIsoCode` | Currency code (if multi-currency) |
 
-### Contract Operations
-- `POST /api/clm/v1/contracts` - Create contract
-- `GET /api/clm/v1/contracts/{id}` - Get contract details
-- `PUT /api/clm/v1/contracts/{id}` - Update contract
-- `POST /api/clm/v1/contracts/query` - Search contracts
+## 🔍 Troubleshooting
 
-### Lifecycle Operations
-- `POST /api/clm/v1/contracts/{id}/activate` - Activate
-- `POST /api/clm/v1/contracts/{id}/renew` - Renew
-- `POST /api/clm/v1/contracts/{id}/terminate` - Terminate
-- `POST /api/clm/v1/contracts/{id}/amend` - Amend
-- `POST /api/clm/v1/contracts/{id}/clone` - Clone
+### Authentication Issues
+1. Run `python test_sf_auth.py` first
+2. Verify External Client App configuration
+3. Check API permissions for the integration user
+4. Ensure Client Credentials Flow is enabled
 
-### Data Operations
-- `POST /api/data/v1/account/query` - Search accounts
-- `POST /api/clm/v1/templates/query` - Search templates
+### Query Issues
+1. Use `list_agreement_fields` to discover available fields
+2. Check object permissions in Salesforce
+3. Verify SOQL syntax with Workbench
 
-## ⚙️ Configuration
+### API Errors
+- **401 Unauthorized**: Invalid Client ID/Secret
+- **403 Forbidden**: Insufficient permissions
+- **INVALID_SESSION_ID**: Token expired (auto-handled)
 
-### Business Rules
-Edit `prompts/system_prompt.txt` to customize:
-- Business logic rules
-- Validation requirements
-- Response style
-- Available contract types
-
-### Tool Definitions
-The agent uses these tools to interact with Conga:
-- `search_contracts` - Find existing contracts
-- `get_contract` - Get contract details
-- `create_contract` - Create new contracts
-- `update_contract` - Update contracts
-- `lifecycle_action` - Perform lifecycle actions
-- `search_accounts` - Find accounts
-- `search_templates` - Find templates
-
-## 🔍 Health Check
-
-The agent includes a health check system:
+## 🏥 Health Check
 
 ```bash
-python main.py
-# In CLI, type: status
+python chat.py
+> health
 ```
 
 This checks:
 - Anthropic API connectivity
-- Conga API authentication
+- Salesforce API authentication
 - Available tools count
 - Conversation state
 
-## 🐛 Debugging
+## 📝 Development
 
-Run with debug flag for detailed error information:
-
-```bash
-python main.py --debug
+### Project Structure
+```
+├── src/
+│   ├── sf_client.py       # Salesforce REST API client
+│   ├── tools.py           # AI tool definitions
+│   └── agent.py           # Claude AI agent
+├── test_sf_auth.py        # Authentication test script
+├── chat.py                # Interactive CLI
+├── .env                   # Configuration (git-ignored)
+└── requirements.txt       # Python dependencies
 ```
 
-## 📝 Requirements
-
-- Python 3.8+
-- Anthropic API key
-- Conga CLM client credentials
-- Required Python packages (see requirements.txt)
+### Adding Custom Tools
+1. Add tool definition to `src/tools.py`
+2. Implement the tool method
+3. Update the `execute_tool` dispatcher
+4. The agent will automatically discover and use new tools
 
 ## 🔐 Security
 
-- Credentials stored in `.env` file (git-ignored)
-- OAuth2 client credentials flow for Conga
-- Automatic token refresh
-- No hardcoded secrets
+- **No Persistent Credentials**: Uses OAuth2 client credentials flow
+- **Session-based Authentication**: Tokens auto-refresh as needed
+- **SOQL Injection Protection**: Query validation and sanitization
+- **Read-only by Default**: Custom tools prevent destructive operations
 
-## 📚 Dependencies
-
-- `anthropic` - Claude AI API client
-- `requests` - HTTP client for Conga APIs
-- `python-dotenv` - Environment variable management
-- `colorama` - Cross-platform colored terminal text
-- `pyyaml` - YAML configuration support
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
+## 🤝 Support
 
 For issues or questions:
-1. Check the health status: `status` command
-2. Review error messages for API connectivity
-3. Verify environment variables are set correctly
-4. Check Conga CLM API documentation for endpoint changes
+1. Check the health status: run `health` command
+2. Verify authentication with `python test_sf_auth.py`
+3. Review Salesforce API permissions
+4. Check logs for detailed error messages
 
 ---
 
-**Happy contract managing! 🎉**
+**Happy agreement management! 🎉**

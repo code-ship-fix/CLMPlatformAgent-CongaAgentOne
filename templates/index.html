@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce Conga CLM AI Agent</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="container">
+                <h1 class="title">
+                    <span class="icon">🤖</span>
+                    Salesforce Conga CLM AI Agent
+                </h1>
+                <p class="subtitle">Chat with your agreements using natural language</p>
+                <div class="status-indicator">
+                    <span class="status-dot" id="connectionStatus"></span>
+                    <span class="status-text" id="connectionText">Connecting...</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <main class="chat-container">
+            <!-- Messages Area -->
+            <div class="messages-wrapper">
+                <div class="messages" id="messages">
+                    <!-- Messages will be inserted here -->
+                </div>
+
+                <!-- Typing Indicator -->
+                <div class="typing-indicator" id="typingIndicator" style="display: none;">
+                    <div class="typing-dots">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                    <span class="typing-text">AI is thinking...</span>
+                </div>
+            </div>
+
+            <!-- Input Area -->
+            <div class="input-area">
+                <div class="input-wrapper">
+                    <textarea
+                        id="messageInput"
+                        class="message-input"
+                        placeholder="Ask me about your agreements... (e.g., 'Show me my recent agreements')"
+                        rows="1"
+                    ></textarea>
+                    <div class="input-buttons">
+                        <button id="clearBtn" class="btn btn-secondary" title="Clear conversation">
+                            🧹
+                        </button>
+                        <button id="healthBtn" class="btn btn-secondary" title="Check system health">
+                            🏥
+                        </button>
+                        <button id="helpBtn" class="btn btn-secondary" title="Show help">
+                            ❓
+                        </button>
+                        <button id="sendBtn" class="btn btn-primary" title="Send message">
+                            ➤
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="quick-actions">
+                    <button class="quick-action-btn" data-message="List my 5 most recent agreements">
+                        📋 Recent Agreements
+                    </button>
+                    <button class="quick-action-btn" data-message="Show me agreements expiring in the next 30 days">
+                        ⏰ Expiring Soon
+                    </button>
+                    <button class="quick-action-btn" data-message="What fields are available for agreements?">
+                        🔍 Available Fields
+                    </button>
+                    <button class="quick-action-btn" data-message="Show me agreements over $100,000">
+                        💰 High Value
+                    </button>
+                </div>
+            </div>
+        </main>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

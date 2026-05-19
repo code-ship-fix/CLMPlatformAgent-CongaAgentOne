@@ -1,14 +1,14 @@
-"""Main LLM-powered agent for Conga CLM interactions."""
+"""Anthropic Claude-powered agent for Salesforce Conga CLM interactions."""
 
 import os
 import json
 from typing import List, Dict, Any, Optional
 from anthropic import Anthropic
-from .tools import CongaTools
-from .utils import load_system_prompt
+from .tools import SalesforceTools
 
-class CongaAgent:
-    """LLM-powered agent for intelligent Conga CLM interactions."""
+
+class SalesforceAgent:
+    """AI agent for intelligent Salesforce Conga CLM interactions."""
 
     def __init__(self):
         # Initialize Anthropic client
@@ -17,180 +17,139 @@ class CongaAgent:
             raise ValueError("ANTHROPIC_API_KEY environment variable is required")
 
         self.anthropic = Anthropic(api_key=api_key)
-        self.tools = CongaTools()
-        self.system_prompt = load_system_prompt()
+        self.tools = SalesforceTools()
+        self.model = "claude-sonnet-4-5"
         self.conversation_history: List[Dict[str, Any]] = []
-        self.model = "claude-sonnet-4-20250514"
+
+        # System prompt for Salesforce Conga CLM
+        self.system_prompt = """You are a Conga CLM assistant working with Salesforce-based agreements.
+
+CONTEXT:
+- You work with agreements stored in the Apttus__APTS_Agreement__c object in Salesforce
+- Agreement fields use the Apttus__ prefix (e.g., Apttus__Status__c, Apttus__Account__c)
+- Always show agreement Name + Id in results so users can reference them
+- Related clauses are in the Apttus__Agreement_Clause__c object
+
+TOOLS AVAILABLE:
+- search_agreements: Find agreements by filters (status, account, dates, value)
+- get_agreement_details: Get full details for a specific agreement ID
+- run_soql: Execute custom SOQL SELECT queries for complex requirements
+- list_agreement_fields: Discover available fields and their types
+- create_agreement: Create new agreements
+- update_agreement: Update existing agreements
+
+GUIDELINES:
+1. Use list_agreement_fields first if unsure what fields exist in the org
+2. Always include Id and Name in search results for easy reference
+3. Use search_agreements for filtered lists, get_agreement_details for single records
+4. For complex queries, use run_soql with proper SOQL syntax
+5. Never invent field names - use describe/list_agreement_fields if uncertain
+6. Show meaningful date ranges (e.g., "next 30 days", "this quarter")
+7. Format monetary values clearly with currency if available
+8. Provide actionable insights about agreement status and timelines
+
+COMMON FIELD MAPPINGS:
+- Agreement Number: Name
+- Status: Apttus__Status__c
+- Status Category: Apttus__Status_Category__c
+- Account: Apttus__Account__c (lookup to Account)
+- Start Date: Apttus__Contract_Start_Date__c
+- End Date: Apttus__Contract_End_Date__c
+- Total Value: Apttus__Total_Contract_Value__c
+- Currency: CurrencyIsoCode (if multi-currency enabled)
+
+Be helpful, concise, and focus on delivering actionable contract insights."""
 
     def chat(self, user_message: str) -> str:
-        """Process user message and return agent response."""
+        """Process user message and return agent response with tool execution."""
         try:
-            # Add user message to conversation history
+            # Add user message to conversation
             self.conversation_history.append({
                 "role": "user",
                 "content": user_message
             })
 
-            # Log the LLM request
-            self._log_llm_request(user_message)
+            # Start conversation loop
+            messages = self.conversation_history.copy()
 
-            # Create message with tool definitions
-            response = self.anthropic.messages.create(
-                model=self.model,
-                max_tokens=4096,
-                system=self.system_prompt,
-                messages=self.conversation_history,
-                tools=self.tools.get_tool_definitions()
-            )
-
-            # Log the LLM response
-            self._log_llm_response(response)
-
-            # Process response
-            assistant_message = {"role": "assistant", "content": []}
-            response_text = ""
-
-            for content_block in response.content:
-                if content_block.type == "text":
-                    response_text += content_block.text
-                    assistant_message["content"].append({
-                        "type": "text",
-                        "text": content_block.text
-                    })
-                elif content_block.type == "tool_use":
-                    # Execute the tool
-                    tool_result = self.tools.execute_tool(
-                        content_block.name,
-                        content_block.input
-                    )
-
-                    # Log tool execution
-                    self._log_tool_execution(content_block.name, content_block.input, tool_result)
-
-                    # Add tool use to conversation
-                    assistant_message["content"].append({
-                        "type": "tool_use",
-                        "id": content_block.id,
-                        "name": content_block.name,
-                        "input": content_block.input
-                    })
-
-                    # Add tool result to conversation
-                    tool_result_message = {
-                        "role": "user",
-                        "content": [
-                            {
-                                "type": "tool_result",
-                                "tool_use_id": content_block.id,
-                                "content": json.dumps(tool_result)
-                            }
-                        ]
-                    }
-
-                    # Add assistant message and tool result to history
-                    self.conversation_history.append(assistant_message)
-                    self.conversation_history.append(tool_result_message)
-
-                    # Get follow-up response from Claude
-                    follow_up_response = self.anthropic.messages.create(
-                        model=self.model,
-                        max_tokens=4096,
-                        system=self.system_prompt,
-                        messages=self.conversation_history,
-                        tools=self.tools.get_tool_definitions()
-                    )
-
-                    # Process follow-up response
-                    return self._process_follow_up_response(follow_up_response)
-
-            # Add assistant response to history if no tools were used
-            if assistant_message["content"]:
-                self.conversation_history.append(assistant_message)
-
-            return response_text.strip() if response_text else "I'm sorry, I couldn't process that request."
-
-        except Exception as e:
-            error_msg = f"I encountered an error: {str(e)}"
-            # Add error to conversation history
-            self.conversation_history.append({
-                "role": "assistant",
-                "content": error_msg
-            })
-            return error_msg
-
-    def _process_follow_up_response(self, response) -> str:
-        """Process follow-up response that may contain more tool calls."""
-        response_text = ""
-        assistant_message = {"role": "assistant", "content": []}
-
-        for content_block in response.content:
-            if content_block.type == "text":
-                response_text += content_block.text
-                assistant_message["content"].append({
-                    "type": "text",
-                    "text": content_block.text
-                })
-            elif content_block.type == "tool_use":
-                # Handle additional tool calls recursively
-                tool_result = self.tools.execute_tool(
-                    content_block.name,
-                    content_block.input
-                )
-
-                assistant_message["content"].append({
-                    "type": "tool_use",
-                    "id": content_block.id,
-                    "name": content_block.name,
-                    "input": content_block.input
-                })
-
-                tool_result_message = {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": content_block.id,
-                            "content": json.dumps(tool_result)
-                        }
-                    ]
-                }
-
-                self.conversation_history.append(assistant_message)
-                self.conversation_history.append(tool_result_message)
-
-                # Get final response
-                final_response = self.anthropic.messages.create(
+            while True:
+                # Call Claude with tools
+                response = self.anthropic.messages.create(
                     model=self.model,
-                    max_tokens=4096,
+                    max_tokens=4000,
                     system=self.system_prompt,
-                    messages=self.conversation_history,
+                    messages=messages,
                     tools=self.tools.get_tool_definitions()
                 )
 
-                # Extract text from final response
-                final_text = ""
-                final_assistant_message = {"role": "assistant", "content": []}
+                # Add Claude's response to messages
+                assistant_message = {
+                    "role": "assistant",
+                    "content": response.content
+                }
+                messages.append(assistant_message)
 
-                for final_block in final_response.content:
-                    if final_block.type == "text":
-                        final_text += final_block.text
-                        final_assistant_message["content"].append({
-                            "type": "text",
-                            "text": final_block.text
+                # Check if Claude wants to use tools
+                tool_use_blocks = [block for block in response.content if block.type == "tool_use"]
+
+                if not tool_use_blocks:
+                    # No tool use - return the text response
+                    text_blocks = [block for block in response.content if block.type == "text"]
+                    final_response = "\n".join([block.text for block in text_blocks])
+
+                    # Update conversation history
+                    self.conversation_history.append(assistant_message)
+
+                    return final_response
+
+                # Execute tools and collect results
+                tool_results = []
+                for tool_block in tool_use_blocks:
+                    tool_name = tool_block.name
+                    tool_input = tool_block.input
+                    tool_use_id = tool_block.id
+
+                    print(f"[AGENT] Executing tool: {tool_name}")
+                    print(f"[AGENT] Tool input: {json.dumps(tool_input, indent=2)}")
+
+                    try:
+                        # Execute the tool
+                        result = self.tools.execute_tool(tool_name, **tool_input)
+
+                        print(f"[AGENT] Tool result preview: {str(result)[:200]}...")
+
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tool_use_id,
+                            "content": json.dumps(result, indent=2, default=str)
                         })
 
-                if final_assistant_message["content"]:
-                    self.conversation_history.append(final_assistant_message)
+                    except Exception as e:
+                        print(f"[AGENT] Tool execution error: {str(e)}")
+                        tool_results.append({
+                            "type": "tool_result",
+                            "tool_use_id": tool_use_id,
+                            "content": json.dumps({
+                                "success": False,
+                                "error": f"Tool execution failed: {str(e)}"
+                            }, indent=2)
+                        })
 
-                return final_text.strip()
+                # Add tool results to conversation
+                if tool_results:
+                    messages.append({
+                        "role": "user",
+                        "content": tool_results
+                    })
 
-        # Add to history if no additional tool calls
-        if assistant_message["content"]:
-            self.conversation_history.append(assistant_message)
+                # Continue the loop to let Claude process the tool results
 
-        return response_text.strip()
+        except Exception as e:
+            error_msg = f"Agent error: {str(e)}"
+            print(f"[AGENT] {error_msg}")
+            return f"I encountered an error: {error_msg}"
 
-    def reset_conversation(self):
+    def clear_history(self):
         """Clear conversation history."""
         self.conversation_history = []
 
@@ -199,123 +158,47 @@ class CongaAgent:
         if not self.conversation_history:
             return "No conversation history."
 
-        summary_parts = []
-        for i, message in enumerate(self.conversation_history, 1):
-            role = message["role"].title()
+        summary = f"Conversation with {len(self.conversation_history)} messages:\n"
+        for i, msg in enumerate(self.conversation_history[-5:], 1):  # Last 5 messages
+            role = msg["role"].title()
+            content = str(msg["content"])
+            preview = content[:100] + "..." if len(content) > 100 else content
+            summary += f"{i}. {role}: {preview}\n"
 
-            if isinstance(message["content"], str):
-                content = message["content"][:100] + "..." if len(message["content"]) > 100 else message["content"]
-            elif isinstance(message["content"], list):
-                text_parts = []
-                for part in message["content"]:
-                    if isinstance(part, dict) and part.get("type") == "text":
-                        text_parts.append(part.get("text", ""))
-                    elif isinstance(part, dict) and part.get("type") == "tool_use":
-                        text_parts.append(f"[Tool: {part.get('name', 'unknown')}]")
-                content = " ".join(text_parts)
-                content = content[:100] + "..." if len(content) > 100 else content
-            else:
-                content = str(message["content"])[:100]
-
-            summary_parts.append(f"{i}. {role}: {content}")
-
-        return "\n".join(summary_parts)
-
-    def update_system_prompt(self, new_prompt: str):
-        """Update the system prompt."""
-        self.system_prompt = new_prompt
-
-    def get_available_tools(self) -> List[str]:
-        """Get list of available tool names."""
-        return [tool["name"] for tool in self.tools.get_tool_definitions()]
-
-    def _log_llm_request(self, user_message: str):
-        """Log the LLM request details."""
-        print(f"\n[LLM REQUEST] ================")
-        print(f"Model: {self.model}")
-        print(f"User Message: {user_message}")
-        print(f"System Prompt (first 200 chars): {self.system_prompt[:200]}...")
-        print(f"Conversation Length: {len(self.conversation_history)}")
-        print(f"Available Tools: {len(self.tools.get_tool_definitions())}")
-        tool_names = [tool['name'] for tool in self.tools.get_tool_definitions()]
-        print(f"Tool Names: {tool_names}")
-        print(f"[LLM REQUEST] ================\n")
-
-    def _log_llm_response(self, response):
-        """Log the LLM response details."""
-        print(f"\n[LLM RESPONSE] ================")
-        print(f"Response ID: {getattr(response, 'id', 'N/A')}")
-        print(f"Model Used: {getattr(response, 'model', 'N/A')}")
-        print(f"Usage: {getattr(response, 'usage', 'N/A')}")
-
-        if hasattr(response, 'content'):
-            for i, content_block in enumerate(response.content):
-                print(f"Content Block {i}: {content_block.type}")
-                if content_block.type == "text":
-                    print(f"Text Content: {content_block.text[:200]}...")
-                elif content_block.type == "tool_use":
-                    print(f"Tool: {content_block.name}")
-                    print(f"Tool Input: {content_block.input}")
-        print(f"[LLM RESPONSE] ================\n")
-
-    def _log_tool_execution(self, tool_name: str, parameters: dict, result: dict):
-        """Log tool execution details."""
-        print(f"\n[TOOL EXECUTION] ================")
-        print(f"Tool: {tool_name}")
-        print(f"Parameters: {parameters}")
-        print(f"Result Success: {result.get('success', 'Unknown')}")
-        print(f"Result Message: {result.get('message', 'No message')}")
-        if 'error' in result:
-            print(f"Error: {result['error']}")
-        if 'raw_response' in result:
-            print(f"Raw API Response: {result['raw_response']}")
-        print(f"[TOOL EXECUTION] ================\n")
+        return summary
 
     def health_check(self) -> Dict[str, Any]:
-        """Perform health check on agent components."""
+        """Check the health of the agent and its components."""
+        health = {
+            "agent_status": "healthy",
+            "anthropic_api": "unknown",
+            "salesforce_api": "unknown",
+            "tools_count": len(self.tools.get_tool_definitions()),
+            "conversation_length": len(self.conversation_history),
+            "errors": []
+        }
+
+        # Test Anthropic API
         try:
-            # Test Anthropic connection
-            anthropic_ok = True
-            anthropic_error = None
-            try:
-                test_response = self.anthropic.messages.create(
-                    model=self.model,
-                    max_tokens=10,
-                    messages=[{"role": "user", "content": "Hi"}]
-                )
-                if not test_response:
-                    anthropic_ok = False
-                    anthropic_error = "No response from Anthropic API"
-            except Exception as e:
-                anthropic_ok = False
-                anthropic_error = str(e)
-
-            # Test Conga connection
-            conga_ok = True
-            conga_error = None
-            try:
-                self.tools.client.authenticate()
-            except Exception as e:
-                conga_ok = False
-                conga_error = str(e)
-
-            return {
-                "status": "healthy" if anthropic_ok and conga_ok else "unhealthy",
-                "anthropic": {
-                    "status": "ok" if anthropic_ok else "error",
-                    "model": self.model,
-                    "error": anthropic_error
-                },
-                "conga": {
-                    "status": "ok" if conga_ok else "error",
-                    "error": conga_error
-                },
-                "tools_count": len(self.get_available_tools()),
-                "conversation_length": len(self.conversation_history)
-            }
-
+            test_response = self.anthropic.messages.create(
+                model=self.model,
+                max_tokens=10,
+                messages=[{"role": "user", "content": "Hello"}]
+            )
+            health["anthropic_api"] = "healthy"
         except Exception as e:
-            return {
-                "status": "error",
-                "error": str(e)
-            }
+            health["anthropic_api"] = "error"
+            health["errors"].append(f"Anthropic API: {str(e)}")
+
+        # Test Salesforce API
+        try:
+            self.tools.client.authenticate()
+            health["salesforce_api"] = "healthy"
+        except Exception as e:
+            health["salesforce_api"] = "error"
+            health["errors"].append(f"Salesforce API: {str(e)}")
+
+        if health["errors"]:
+            health["agent_status"] = "degraded"
+
+        return health
